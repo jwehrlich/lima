@@ -30,7 +30,7 @@ base:
 
 ### Memory Ballooning
 
-| ⚡ Requirement | Lima >= 2.0.0, macOS >= 13.0, VZ backend only |
+| ⚡ Requirement | Lima >= 2.1.0, macOS >= 13.0, VZ backend only |
 |-------------------|--------------------------------------------|
 
 Memory ballooning dynamically adjusts the guest VM's memory allocation based on actual
@@ -67,7 +67,7 @@ avoid shrinking memory during active workloads.
 
 ### Auto-Pause
 
-| ⚡ Requirement | Lima >= 2.0.0, macOS >= 13.0, VZ backend, memoryBalloon enabled |
+| ⚡ Requirement | Lima >= 2.1.0, macOS >= 13.0, VZ backend, memoryBalloon enabled |
 |-------------------|---------------------------------------------------------------|
 
 Auto-pause suspends a VZ virtual machine after a period of inactivity and resumes
