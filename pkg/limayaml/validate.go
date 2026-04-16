@@ -520,43 +520,6 @@ func validateMemoryBalloon(y *limatype.LimaYAML) error {
 			errs = errors.Join(errs, fmt.Errorf("field `%s.cooldown` must be a valid duration: %w", field, err))
 		}
 	}
-	if balloon.IdleGracePeriod != nil {
-		if _, err := parseDuration(*balloon.IdleGracePeriod); err != nil {
-			errs = errors.Join(errs, fmt.Errorf("field `%s.idleGracePeriod` must be a valid duration: %w", field, err))
-		}
-	}
-	if balloon.SettleWindow != nil {
-		if _, err := parseDuration(*balloon.SettleWindow); err != nil {
-			errs = errors.Join(errs, fmt.Errorf("field `%s.settleWindow` must be a valid duration: %w", field, err))
-		}
-	}
-
-	// Rule 7: byte sizes must be parseable.
-	if balloon.MaxSwapInPerSec != nil {
-		if _, err := units.RAMInBytes(*balloon.MaxSwapInPerSec); err != nil {
-			errs = errors.Join(errs, fmt.Errorf("field `%s.maxSwapInPerSec` must be a valid byte size: %w", field, err))
-		}
-	}
-	if balloon.MaxSwapOutPerSec != nil {
-		if _, err := units.RAMInBytes(*balloon.MaxSwapOutPerSec); err != nil {
-			errs = errors.Join(errs, fmt.Errorf("field `%s.maxSwapOutPerSec` must be a valid byte size: %w", field, err))
-		}
-	}
-	if balloon.ShrinkReserveBytes != nil {
-		if _, err := units.RAMInBytes(*balloon.ShrinkReserveBytes); err != nil {
-			errs = errors.Join(errs, fmt.Errorf("field `%s.shrinkReserveBytes` must be a valid byte size: %w", field, err))
-		}
-	}
-	if balloon.MaxContainerIO != nil {
-		if _, err := units.RAMInBytes(*balloon.MaxContainerIO); err != nil {
-			errs = errors.Join(errs, fmt.Errorf("field `%s.maxContainerIO` must be a valid byte size: %w", field, err))
-		}
-	}
-
-	// Rule 8: maxContainerCPU > 0.
-	if balloon.MaxContainerCPU != nil && *balloon.MaxContainerCPU <= 0.0 {
-		errs = errors.Join(errs, fmt.Errorf("field `%s.maxContainerCPU` must be greater than 0.0", field))
-	}
 
 	return errs
 }
@@ -608,23 +571,6 @@ func validateAutoPause(y *limatype.LimaYAML) error {
 	balloon := vzOpts.MemoryBalloon
 	if balloon.Enabled == nil || !*balloon.Enabled {
 		errs = errors.Join(errs, fmt.Errorf("field `%s` requires `vmOpts.vz.memoryBalloon.enabled` to be true", field))
-	}
-
-	// Rule 5: containerCPUThreshold must be in range [0.0, 100.0] if specified.
-	if ap.IdleSignals.ContainerCPUThreshold != nil {
-		threshold := *ap.IdleSignals.ContainerCPUThreshold
-		if math.IsNaN(threshold) || threshold < 0.0 || threshold > 100.0 {
-			errs = errors.Join(errs, fmt.Errorf(
-				"field `%s.idleSignals.containerCPUThreshold` must be between 0.0 and 100.0, got %g",
-				field, threshold))
-		}
-	}
-
-	// Rule 6: warn if containerCPU is disabled but containerCPUThreshold is set.
-	if ap.IdleSignals.ContainerCPU != nil && !*ap.IdleSignals.ContainerCPU &&
-		ap.IdleSignals.ContainerCPUThreshold != nil {
-		logrus.Warnf("field `%s.idleSignals.containerCPUThreshold` is set but "+
-			"`containerCPU` is disabled; threshold will be ignored", field)
 	}
 
 	return errs

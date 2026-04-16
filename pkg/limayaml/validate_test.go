@@ -470,7 +470,6 @@ func TestValidate_BalloonThresholds(t *testing.T) {
 				HighPressureThreshold: ptr.Of(0.88),
 				LowPressureThreshold:  ptr.Of(0.35),
 				Cooldown:              ptr.Of("30s"),
-				IdleGracePeriod:       ptr.Of("5m"),
 			},
 			wantErr: "",
 		},
@@ -985,7 +984,7 @@ func TestValidate_AutoPauseNoBalloonInVMOpts(t *testing.T) {
 	assert.ErrorContains(t, err, "memoryBalloon.enabled")
 }
 
-// --- Phase 7: IdleSignals Validation Tests ---
+// --- Phase 7: AutoPause Validation Tests ---
 
 // makeAutoPauseYAML builds a LimaYAML with auto-pause enabled and balloon enabled.
 func makeAutoPauseYAML(t *testing.T, ap limatype.AutoPause) *limatype.LimaYAML {
@@ -1004,60 +1003,8 @@ func makeAutoPauseYAML(t *testing.T, ap limatype.AutoPause) *limatype.LimaYAML {
 	return y
 }
 
-func TestValidate_AutoPauseCPUThresholdRange(t *testing.T) {
-	tests := []struct {
-		name      string
-		threshold float64
-		wantErr   bool
-	}{
-		{"negative", -1.0, true},
-		{"too high", 101.0, true},
-		{"NaN", math.NaN(), true},
-		{"zero", 0.0, false},
-		{"max", 100.0, false},
-		{"mid", 50.0, false},
-		{"default", 0.5, false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ap := limatype.AutoPause{
-				Enabled:       ptr.Of(true),
-				IdleTimeout:   ptr.Of("15m"),
-				ResumeTimeout: ptr.Of("30s"),
-				IdleSignals: limatype.IdleSignals{
-					ContainerCPUThreshold: ptr.Of(tt.threshold),
-				},
-			}
-			y := makeAutoPauseYAML(t, ap)
-			err := Validate(y, false)
-			if tt.wantErr {
-				assert.ErrorContains(t, err, "containerCPUThreshold")
-			} else {
-				assert.NilError(t, err)
-			}
-		})
-	}
-}
-
-func TestValidate_AutoPauseCPUDisabledWithThreshold(t *testing.T) {
-	// containerCPU disabled but threshold set → warning only, no error.
-	ap := limatype.AutoPause{
-		Enabled:       ptr.Of(true),
-		IdleTimeout:   ptr.Of("15m"),
-		ResumeTimeout: ptr.Of("30s"),
-		IdleSignals: limatype.IdleSignals{
-			ContainerCPU:          ptr.Of(false),
-			ContainerCPUThreshold: ptr.Of(5.0),
-		},
-	}
-	y := makeAutoPauseYAML(t, ap)
-	err := Validate(y, false)
-	assert.NilError(t, err, "disabled CPU with threshold should warn but not error")
-}
-
-func TestValidate_AutoPauseIdleSignalsZeroValue(t *testing.T) {
-	// Zero-value IdleSignals (all nil) should pass validation — no threshold set.
+func TestValidate_AutoPauseBasicFields(t *testing.T) {
+	// AutoPause with valid fields should pass validation.
 	ap := limatype.AutoPause{
 		Enabled:       ptr.Of(true),
 		IdleTimeout:   ptr.Of("15m"),

@@ -55,7 +55,6 @@ vmOpts:
       highPressureThreshold: 0.88  # PSI some10 threshold to trigger grow
       lowPressureThreshold: 0.35   # PSI some10 threshold to allow shrink
       cooldown: "30s"          # Minimum time between balloon actions
-      idleGracePeriod: "5m"    # Wait after boot before ballooning begins
 ```
 
 When `enabled` is not specified, memory ballooning defaults to disabled. When enabled

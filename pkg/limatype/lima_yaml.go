@@ -148,26 +148,6 @@ type MemoryBalloon struct {
 	LowPressureThreshold *float64 `yaml:"lowPressureThreshold,omitempty" json:"lowPressureThreshold,omitempty" jsonschema:"nullable"`
 	// Cooldown is the minimum time between balloon actions (e.g., "30s").
 	Cooldown *string `yaml:"cooldown,omitempty" json:"cooldown,omitempty" jsonschema:"nullable"`
-	// IdleGracePeriod is how long after boot before ballooning begins (e.g., "5m").
-	IdleGracePeriod *string `yaml:"idleGracePeriod,omitempty" json:"idleGracePeriod,omitempty" jsonschema:"nullable"`
-	// MaxSwapInPerSec is the swap-in rate threshold that blocks shrinking (e.g., "50MiB").
-	MaxSwapInPerSec *string `yaml:"maxSwapInPerSec,omitempty" json:"maxSwapInPerSec,omitempty" jsonschema:"nullable"`
-	// MaxSwapOutPerSec is the swap-out rate threshold that blocks shrinking (e.g., "32MiB").
-	MaxSwapOutPerSec *string `yaml:"maxSwapOutPerSec,omitempty" json:"maxSwapOutPerSec,omitempty" jsonschema:"nullable"`
-	// MaxPageFaultRate is the page-fault rate (faults/sec) threshold that blocks shrinking.
-	MaxPageFaultRate *uint64 `yaml:"maxPageFaultRate,omitempty" json:"maxPageFaultRate,omitempty" jsonschema:"nullable"`
-	// ShrinkReserveBytes is the minimum MemAvailable margin required before shrinking (e.g., "128MiB").
-	ShrinkReserveBytes *string `yaml:"shrinkReserveBytes,omitempty" json:"shrinkReserveBytes,omitempty" jsonschema:"nullable"`
-	// SettleWindow is how long low pressure must persist before shrinking (e.g., "30s").
-	SettleWindow *string `yaml:"settleWindow,omitempty" json:"settleWindow,omitempty" jsonschema:"nullable"`
-	// MaxContainerCPU is the container CPU usage threshold that blocks shrinking (percentage, e.g., 10.0).
-	MaxContainerCPU *float64 `yaml:"maxContainerCPU,omitempty" json:"maxContainerCPU,omitempty" jsonschema:"nullable"`
-	// MaxContainerIO is the container I/O rate threshold that blocks shrinking (e.g., "100MiB").
-	MaxContainerIO *string `yaml:"maxContainerIO,omitempty" json:"maxContainerIO,omitempty" jsonschema:"nullable"`
-	// FloorStaleness is how long a learned floor stays valid before re-learning (e.g., "24h"). 0 = never stale.
-	FloorStaleness *string `yaml:"floorStaleness,omitempty" json:"floorStaleness,omitempty" jsonschema:"nullable"`
-	// EnableTrendDetection enables pre-emptive grow on rising PSI trend (avg10 > 1.5*avg60).
-	EnableTrendDetection *bool `yaml:"enableTrendDetection,omitempty" json:"enableTrendDetection,omitempty" jsonschema:"nullable"`
 }
 
 // AutoPause configures automatic VM pausing when idle for the VZ backend.
@@ -181,25 +161,6 @@ type AutoPause struct {
 	IdleTimeout *string `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" jsonschema:"nullable"`
 	// ResumeTimeout is the maximum time to wait for a resume operation (e.g., "30s"). Minimum 5s.
 	ResumeTimeout *string `yaml:"resumeTimeout,omitempty" json:"resumeTimeout,omitempty" jsonschema:"nullable"`
-	// IdleSignals configures which activity signals prevent auto-pause.
-	IdleSignals IdleSignals `yaml:"idleSignals,omitempty" json:"idleSignals,omitempty"`
-}
-
-// IdleSignals configures which activity signals prevent VM auto-pause.
-// All signals default to enabled (true) when not specified.
-type IdleSignals struct {
-	// ActiveConnections tracks open proxy socket connections as VM activity.
-	// When true, any active bicopy relay session prevents pause.
-	ActiveConnections *bool `yaml:"activeConnections,omitempty" json:"activeConnections,omitempty" jsonschema:"nullable"`
-	// ContainerCPU tracks container CPU usage as VM activity.
-	// When true, containers with CPU above ContainerCPUThreshold prevent pause.
-	ContainerCPU *bool `yaml:"containerCPU,omitempty" json:"containerCPU,omitempty" jsonschema:"nullable"`
-	// ContainerCPUThreshold is the minimum CPU percentage to consider containers active.
-	// Only used when ContainerCPU is enabled. Default: 0.5 (0.5%). Range: 0.0–100.0.
-	ContainerCPUThreshold *float64 `yaml:"containerCPUThreshold,omitempty" json:"containerCPUThreshold,omitempty" jsonschema:"nullable"`
-	// ContainerIO tracks container IO byte rate changes as VM activity.
-	// When true, changing IO rates prevent pause.
-	ContainerIO *bool `yaml:"containerIO,omitempty" json:"containerIO,omitempty" jsonschema:"nullable"`
 }
 
 type Rosetta struct {

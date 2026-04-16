@@ -49,12 +49,6 @@ vmOpts:
       highPressureThreshold: 0.88
       lowPressureThreshold: 0.35
       cooldown: "30s"
-      idleGracePeriod: "5m"
-      maxSwapOutPerSec: "32MiB"
-      maxPageFaultRate: 5000
-      shrinkReserveBytes: "128MiB"
-      settleWindow: "30s"
-      enableTrendDetection: true
     # Auto-pause — pause the VM when idle to save energy.
     autoPause:
       enabled: true

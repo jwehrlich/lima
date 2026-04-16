@@ -732,10 +732,6 @@ func TestMemoryBalloonStruct(t *testing.T) {
 		HighPressureThreshold: ptr.Of(0.88),
 		LowPressureThreshold:  ptr.Of(0.35),
 		Cooldown:              ptr.Of("30s"),
-		IdleGracePeriod:       ptr.Of("5m"),
-		MaxSwapInPerSec:       ptr.Of("64MiB"),
-		MaxContainerCPU:       ptr.Of(10.0),
-		MaxContainerIO:        ptr.Of("10MiB"),
 	}
 	assert.Equal(t, *balloon.Enabled, true)
 	assert.Equal(t, *balloon.Min, "3GiB")
@@ -760,38 +756,11 @@ func TestAutoPauseStruct(t *testing.T) {
 	assert.Equal(t, *ap.IdleTimeout, "15m")
 	assert.Equal(t, *ap.ResumeTimeout, "30s")
 
-	// Verify IdleSignals zero value has nil pointers (all defaults).
-	assert.Assert(t, ap.IdleSignals.ActiveConnections == nil)
-	assert.Assert(t, ap.IdleSignals.ContainerCPU == nil)
-	assert.Assert(t, ap.IdleSignals.ContainerCPUThreshold == nil)
-	assert.Assert(t, ap.IdleSignals.ContainerIO == nil)
-
 	// Verify AutoPause is a field on VZOpts.
 	vzOpts := limatype.VZOpts{
 		AutoPause: ap,
 	}
 	assert.Equal(t, *vzOpts.AutoPause.Enabled, true)
-}
-
-func TestIdleSignalsStruct(t *testing.T) {
-	// Verify IdleSignals struct with explicit values.
-	sig := limatype.IdleSignals{
-		ActiveConnections:     ptr.Of(false),
-		ContainerCPU:          ptr.Of(true),
-		ContainerCPUThreshold: ptr.Of(5.0),
-		ContainerIO:           ptr.Of(false),
-	}
-	assert.Equal(t, *sig.ActiveConnections, false)
-	assert.Equal(t, *sig.ContainerCPU, true)
-	assert.Equal(t, *sig.ContainerCPUThreshold, 5.0)
-	assert.Equal(t, *sig.ContainerIO, false)
-
-	// Verify it can be set on AutoPause.
-	ap := limatype.AutoPause{
-		Enabled:     ptr.Of(true),
-		IdleSignals: sig,
-	}
-	assert.Equal(t, *ap.IdleSignals.ContainerCPUThreshold, 5.0)
 }
 
 func TestStatusPaused(t *testing.T) {

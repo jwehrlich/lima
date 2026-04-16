@@ -661,20 +661,8 @@ sudo chown -R "${USER}" /run/host-services`
 							resumeTimeout = d
 						}
 					}
-					// Resolve idle signal configuration from YAML (nil = default).
+					// Use default idle signal configuration.
 					signalConfig := DefaultIdleSignalConfig()
-					if vzOpts.AutoPause.IdleSignals.ActiveConnections != nil {
-						signalConfig.ActiveConnections = *vzOpts.AutoPause.IdleSignals.ActiveConnections
-					}
-					if vzOpts.AutoPause.IdleSignals.ContainerCPU != nil {
-						signalConfig.ContainerCPU = *vzOpts.AutoPause.IdleSignals.ContainerCPU
-					}
-					if vzOpts.AutoPause.IdleSignals.ContainerCPUThreshold != nil {
-						signalConfig.ContainerCPUThreshold = *vzOpts.AutoPause.IdleSignals.ContainerCPUThreshold
-					}
-					if vzOpts.AutoPause.IdleSignals.ContainerIO != nil {
-						signalConfig.ContainerIO = *vzOpts.AutoPause.IdleSignals.ContainerIO
-					}
 
 					mgr := NewAutoPauseManager(pausable, idleTimeout, resumeTimeout, signalConfig)
 					a.autoPauseMgr = mgr
@@ -1452,64 +1440,18 @@ func parseBalloonConfig(instConfig *limatype.LimaYAML, balloon *limatype.MemoryB
 		}
 		cfg.Cooldown = d
 	}
-	if balloon.IdleGracePeriod != nil {
-		d, err := time.ParseDuration(*balloon.IdleGracePeriod)
-		if err != nil {
-			return cfg, fmt.Errorf("invalid balloon idleGracePeriod: %w", err)
-		}
-		cfg.IdleGracePeriod = d
-	}
-	if balloon.MaxSwapInPerSec != nil {
-		b, err := units.RAMInBytes(*balloon.MaxSwapInPerSec)
-		if err != nil {
-			return cfg, fmt.Errorf("invalid balloon maxSwapInPerSec: %w", err)
-		}
-		cfg.MaxSwapInPerSec = uint64(b)
-	}
-	if balloon.MaxSwapOutPerSec != nil {
-		b, err := units.RAMInBytes(*balloon.MaxSwapOutPerSec)
-		if err != nil {
-			return cfg, fmt.Errorf("invalid balloon maxSwapOutPerSec: %w", err)
-		}
-		cfg.MaxSwapOutPerSec = uint64(b)
-	}
-	if balloon.MaxPageFaultRate != nil {
-		cfg.MaxPageFaultRate = *balloon.MaxPageFaultRate
-	}
-	if balloon.ShrinkReserveBytes != nil {
-		b, err := units.RAMInBytes(*balloon.ShrinkReserveBytes)
-		if err != nil {
-			return cfg, fmt.Errorf("invalid balloon shrinkReserveBytes: %w", err)
-		}
-		cfg.ShrinkReserveBytes = uint64(b)
-	}
-	if balloon.SettleWindow != nil {
-		d, err := time.ParseDuration(*balloon.SettleWindow)
-		if err != nil {
-			return cfg, fmt.Errorf("invalid balloon settleWindow: %w", err)
-		}
-		cfg.SettleWindow = d
-	}
-	if balloon.MaxContainerCPU != nil {
-		cfg.MaxContainerCPU = *balloon.MaxContainerCPU
-	}
-	if balloon.MaxContainerIO != nil {
-		b, err := units.RAMInBytes(*balloon.MaxContainerIO)
-		if err != nil {
-			return cfg, fmt.Errorf("invalid balloon maxContainerIO: %w", err)
-		}
-		cfg.MaxContainerIO = uint64(b)
-	}
-	if balloon.FloorStaleness != nil {
-		d, err := time.ParseDuration(*balloon.FloorStaleness)
-		if err != nil {
-			return cfg, fmt.Errorf("invalid balloon floorStaleness: %w", err)
-		}
-		cfg.FloorStaleness = d
-	}
-	if balloon.EnableTrendDetection != nil {
-		cfg.EnableTrendDetection = *balloon.EnableTrendDetection
-	}
+
+	// Hardcoded internal defaults for advanced knobs.
+	cfg.IdleGracePeriod = 5 * time.Minute
+	cfg.MaxSwapInPerSec = 64 * 1024 * 1024  // 64 MiB/s.
+	cfg.MaxSwapOutPerSec = 32 * 1024 * 1024  // 32 MiB/s.
+	cfg.MaxPageFaultRate = 5000
+	cfg.ShrinkReserveBytes = 128 * 1024 * 1024 // 128 MiB.
+	cfg.SettleWindow = 30 * time.Second
+	cfg.MaxContainerCPU = 10.0
+	cfg.MaxContainerIO = 10 * 1024 * 1024 // 10 MiB/s.
+	cfg.FloorStaleness = 24 * time.Hour
+
 	return cfg, nil
 }
 
