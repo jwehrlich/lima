@@ -34,7 +34,7 @@ type Instance struct {
 	Arch                  Arch              `json:"arch"`
 	CPUs                  int               `json:"cpus,omitempty"`
 	Memory                int64             `json:"memory,omitempty"`         // bytes (configured)
-	PhysicalMemory        int64             `json:"physicalMemory,omitempty"` // bytes (actual host footprint)
+	PhysicalMemory        *int64            `json:"physicalMemory,omitempty"` // bytes (actual host footprint)
 	Disk                  int64             `json:"disk,omitempty"`           // bytes
 	Message               string            `json:"message,omitempty"`
 	AdditionalDisks       []Disk            `json:"additionalDisks,omitempty"`

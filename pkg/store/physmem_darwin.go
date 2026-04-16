@@ -18,19 +18,19 @@ import (
 // getInstancePhysicalMemory returns the physical memory footprint in bytes
 // for a VZ instance by finding the XPC process that has the instance's disk
 // file open and querying its memory footprint via the macOS `footprint` command.
-func getInstancePhysicalMemory(instDir string) int64 {
+func getInstancePhysicalMemory(instDir string) *int64 {
 	diskPath := filepath.Join(instDir, "disk")
 	pid, err := findDiskOwnerPID(diskPath)
 	if err != nil {
 		logrus.Debugf("Could not find VZ XPC process for %q: %v", instDir, err)
-		return 0
+		return nil
 	}
 	mem, err := getPhysicalFootprint(pid)
 	if err != nil {
 		logrus.Debugf("Could not get physical footprint for PID %d: %v", pid, err)
-		return 0
+		return nil
 	}
-	return mem
+	return &mem
 }
 
 // findDiskOwnerPID finds the PID of the process that has the given disk file open

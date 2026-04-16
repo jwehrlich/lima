@@ -118,31 +118,31 @@ func TestFormatMemoryColumn(t *testing.T) {
 	tests := []struct {
 		name           string
 		configuredMem  int64
-		physicalMem    int64
+		physicalMem    *int64
 		expectedOutput string
 	}{
 		{
 			name:           "no physical memory info",
 			configuredMem:  8 * 1024 * 1024 * 1024,
-			physicalMem:    0,
+			physicalMem:    nil,
 			expectedOutput: "8GiB",
 		},
 		{
 			name:           "paused VM with reduced memory",
 			configuredMem:  8 * 1024 * 1024 * 1024,
-			physicalMem:    802 * 1000 * 1000,
+			physicalMem:    ptrInt64(802 * 1000 * 1000),
 			expectedOutput: "802MB/8GiB",
 		},
 		{
 			name:           "running VM at full memory",
 			configuredMem:  8 * 1024 * 1024 * 1024,
-			physicalMem:    8 * 1024 * 1024 * 1024,
+			physicalMem:    ptrInt64(8 * 1024 * 1024 * 1024),
 			expectedOutput: "8GiB",
 		},
 		{
 			name:           "physical close to configured (within 10%)",
 			configuredMem:  8 * 1024 * 1024 * 1024,
-			physicalMem:    int64(7.5 * 1024 * 1024 * 1024),
+			physicalMem:    ptrInt64(int64(7.5 * 1024 * 1024 * 1024)),
 			expectedOutput: "8GiB",
 		},
 	}
@@ -152,4 +152,8 @@ func TestFormatMemoryColumn(t *testing.T) {
 			assert.Equal(t, got, tt.expectedOutput)
 		})
 	}
+}
+
+func ptrInt64(v int64) *int64 {
+	return &v
 }

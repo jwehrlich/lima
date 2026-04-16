@@ -7,6 +7,6 @@ package store
 
 // getInstancePhysicalMemory is a no-op on non-macOS platforms since the
 // VZ framework and `footprint` command are macOS-specific.
-func getInstancePhysicalMemory(_ string) int64 {
-	return 0
+func getInstancePhysicalMemory(_ string) *int64 {
+	return nil
 }

@@ -82,16 +82,16 @@ func parseFuserOutput(output string) (int, error) {
 // When physical memory is available and significantly less than configured,
 // it shows "physical/configured" (e.g., "802MB/8GiB"). Otherwise it shows
 // just the configured memory (e.g., "8GiB").
-func FormatMemoryColumn(configuredMem, physicalMem int64) string {
+func FormatMemoryColumn(configuredMem int64, physicalMem *int64) string {
 	configured := units.BytesSize(float64(configuredMem))
-	if physicalMem <= 0 || configuredMem <= 0 {
+	if physicalMem == nil || configuredMem <= 0 {
 		return configured
 	}
 	// Only show physical/configured when physical is significantly less (>10% difference).
-	ratio := float64(physicalMem) / float64(configuredMem)
+	ratio := float64(*physicalMem) / float64(configuredMem)
 	if ratio >= 0.9 {
 		return configured
 	}
-	physical := units.HumanSize(float64(physicalMem))
+	physical := units.HumanSize(float64(*physicalMem))
 	return physical + "/" + configured
 }
