@@ -19,7 +19,7 @@ import (
 type Collector struct{}
 
 // NewCollector creates a no-op collector on non-Linux platforms.
-func NewCollector(_ *string) *Collector {
+func NewCollector() *Collector {
 	return &Collector{}
 }
 

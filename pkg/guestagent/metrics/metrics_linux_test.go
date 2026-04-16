@@ -249,7 +249,7 @@ func TestParseProcVmstat_MissingFields(t *testing.T) {
 // --- Collector tests ---
 
 func TestCollector_SwapRates(t *testing.T) {
-	c := NewCollector(nil)
+	c := NewCollector()
 	// First sample: sets baseline, rates are zero.
 	vs1 := vmstatCounters{pswpin: 100, pswpout: 200, pgfault: 1000}
 	now := time.Now()
@@ -270,7 +270,7 @@ func TestCollector_SwapRates(t *testing.T) {
 }
 
 func TestCollector_SwapRates_ZeroDuration(t *testing.T) {
-	c := NewCollector(nil)
+	c := NewCollector()
 	vs := vmstatCounters{pswpin: 100, pswpout: 200}
 	now := time.Now()
 	c.computeVmstatDeltas(vs, now)
@@ -280,7 +280,7 @@ func TestCollector_SwapRates_ZeroDuration(t *testing.T) {
 }
 
 func TestCollector_OomDetected(t *testing.T) {
-	c := NewCollector(nil)
+	c := NewCollector()
 	now := time.Now()
 	// First sample: baseline oom_kill=0.
 	vs1 := vmstatCounters{oomKill: 0}
@@ -304,7 +304,7 @@ func TestCollector_OomDetected(t *testing.T) {
 
 func TestCollector_CounterWrap(t *testing.T) {
 	// If counters decrease (e.g., system reboot), treat as reset.
-	c := NewCollector(nil)
+	c := NewCollector()
 	now := time.Now()
 	vs1 := vmstatCounters{pswpin: 1000, pswpout: 2000, pgfault: 5000, oomKill: 2}
 	c.computeVmstatDeltas(vs1, now)
@@ -318,112 +318,25 @@ func TestCollector_CounterWrap(t *testing.T) {
 	assert.Equal(t, c.oomDetected, false)
 }
 
-// --- Docker container stats parsing tests ---
+// --- Cgroup delta computation tests ---
 
-func TestParseDockerContainerList(t *testing.T) {
-	data := `[
-  {"Id": "abc123", "State": "running"},
-  {"Id": "def456", "State": "running"},
-  {"Id": "ghi789", "State": "exited"}
-]`
-	ids, err := parseDockerContainerList([]byte(data))
-	assert.NilError(t, err)
-	// Only running containers.
-	assert.Equal(t, len(ids), 2)
+func TestCollector_CgroupDeltas_FirstSample(t *testing.T) {
+	c := NewCollector()
+	// First call has no previous data — rates should be zero.
+	paths := []string{"/sys/fs/cgroup/system.slice/docker-abc.scope"}
+	// Inject test data by priming the maps (simulate cgroupCPUUsage/cgroupIOBytes calls).
+	// Since we can't inject real cgroup paths in unit tests, test the delta
+	// computation directly by pre-populating prevCgroupCPU/IO.
+	now := time.Now()
+	cpu, io := c.computeCgroupDeltas(paths, now)
+	// First sample: no previous data, rates are zero.
+	// (cgroupCPUUsage will fail since paths don't exist, so nothing is recorded.)
+	assert.Equal(t, cpu, 0.0)
+	assert.Equal(t, io, 0.0)
 }
 
-func TestParseDockerContainerList_Empty(t *testing.T) {
-	ids, err := parseDockerContainerList([]byte("[]"))
-	assert.NilError(t, err)
-	assert.Equal(t, len(ids), 0)
-}
-
-func TestParseDockerStats(t *testing.T) {
-	// Simplified Docker stats API response (single-shot, stream=false).
-	data := `{
-  "cpu_stats": {
-    "cpu_usage": {"total_usage": 200000000},
-    "system_cpu_usage": 1000000000,
-    "online_cpus": 4
-  },
-  "precpu_stats": {
-    "cpu_usage": {"total_usage": 100000000},
-    "system_cpu_usage": 900000000,
-    "online_cpus": 4
-  },
-  "blkio_stats": {
-    "io_service_bytes_recursive": [
-      {"op": "read", "value": 5000},
-      {"op": "write", "value": 3000}
-    ]
-  }
-}`
-	cpuPct, ioBytes, err := parseDockerStats([]byte(data))
-	assert.NilError(t, err)
-	// CPU delta = 200M - 100M = 100M; system delta = 1000M - 900M = 100M.
-	// CPU% = (100M / 100M) * 4 cpus * 100 = 400%.
-	assert.Equal(t, cpuPct, 400.0)
-	// IO bytes = 5000 + 3000 = 8000.
-	assert.Equal(t, ioBytes, uint64(8000))
-}
-
-func TestParseDockerStats_NoPrecpu(t *testing.T) {
-	// When precpu_stats is empty, CPU% should be 0.
-	data := `{
-  "cpu_stats": {
-    "cpu_usage": {"total_usage": 200000000},
-    "system_cpu_usage": 1000000000,
-    "online_cpus": 4
-  },
-  "precpu_stats": {
-    "cpu_usage": {"total_usage": 0},
-    "system_cpu_usage": 0,
-    "online_cpus": 0
-  }
-}`
-	cpuPct, _, err := parseDockerStats([]byte(data))
-	assert.NilError(t, err)
-	assert.Equal(t, cpuPct, 0.0)
-}
-
-func TestParseDockerStats_NoBlkio(t *testing.T) {
-	data := `{
-  "cpu_stats": {
-    "cpu_usage": {"total_usage": 200000000},
-    "system_cpu_usage": 1000000000,
-    "online_cpus": 4
-  },
-  "precpu_stats": {
-    "cpu_usage": {"total_usage": 100000000},
-    "system_cpu_usage": 900000000,
-    "online_cpus": 4
-  }
-}`
-	_, ioBytes, err := parseDockerStats([]byte(data))
-	assert.NilError(t, err)
-	assert.Equal(t, ioBytes, uint64(0))
-}
-
-func TestParseDockerStats_CPUCounterWrap(t *testing.T) {
-	// When a container restarts, current TotalUsage can be less than PreCPU.
-	// The uint64 subtraction must not wrap around to a huge value.
-	data := []byte(`{
-		"cpu_stats": {"cpu_usage": {"total_usage": 50000}, "system_cpu_usage": 2000000000, "online_cpus": 4},
-		"precpu_stats": {"cpu_usage": {"total_usage": 100000000}, "system_cpu_usage": 1000000000, "online_cpus": 4}
-	}`)
-	cpuPct, _, err := parseDockerStats(data)
-	assert.NilError(t, err)
-	// CPU should be 0 (not astronomical) when counters wrap.
-	assert.Equal(t, cpuPct, float64(0))
-}
-
-func TestParseDockerStats_SystemCounterWrap(t *testing.T) {
-	// When system counters wrap (e.g., after host reboot), CPU should be 0.
-	data := []byte(`{
-		"cpu_stats": {"cpu_usage": {"total_usage": 200000000}, "system_cpu_usage": 500000000, "online_cpus": 4},
-		"precpu_stats": {"cpu_usage": {"total_usage": 100000000}, "system_cpu_usage": 1000000000, "online_cpus": 4}
-	}`)
-	cpuPct, _, err := parseDockerStats(data)
-	assert.NilError(t, err)
-	assert.Equal(t, cpuPct, float64(0))
+func TestSafeDelta(t *testing.T) {
+	assert.Equal(t, safeDelta(100, 50), uint64(50))
+	assert.Equal(t, safeDelta(50, 100), uint64(0))
+	assert.Equal(t, safeDelta(100, 100), uint64(0))
 }

@@ -146,8 +146,7 @@ func daemonAction(cmd *cobra.Command, _ []string) error {
 		logrus.Infof("serving the guest agent on %q", socket)
 	}
 	defer logrus.Debug("exiting lima-guestagent daemon")
-	dockerSocket := "/var/run/docker.sock"
-	collector := metrics.NewCollector(&dockerSocket)
+	collector := metrics.NewCollector()
 	defer collector.Close()
 	return server.StartServer(ctx, l, &server.GuestServer{Agent: agent, TunnelS: portfwdserver.NewTunnelServer(), Collector: collector})
 }
