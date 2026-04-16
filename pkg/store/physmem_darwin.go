@@ -36,7 +36,9 @@ func getInstancePhysicalMemory(instDir string) *int64 {
 // findDiskOwnerPID finds the PID of the process that has the given disk file open
 // using the macOS `fuser` command.
 func findDiskOwnerPID(diskPath string) (int, error) {
-	out, err := exec.CommandContext(context.Background(), "fuser", diskPath).CombinedOutput()
+	cmd := exec.CommandContext(context.Background(), "fuser", diskPath)
+	cmd.Env = append(cmd.Environ(), "LANG=C", "LC_ALL=C")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0, fmt.Errorf("fuser %q: %w", diskPath, err)
 	}
@@ -46,7 +48,9 @@ func findDiskOwnerPID(diskPath string) (int, error) {
 // getPhysicalFootprint returns the physical memory footprint in bytes for a
 // given PID using the macOS `footprint` command.
 func getPhysicalFootprint(pid int) (int64, error) {
-	out, err := exec.CommandContext(context.Background(), "footprint", strconv.Itoa(pid)).Output()
+	cmd := exec.CommandContext(context.Background(), "footprint", strconv.Itoa(pid))
+	cmd.Env = append(cmd.Environ(), "LANG=C", "LC_ALL=C")
+	out, err := cmd.Output()
 	if err != nil {
 		return 0, fmt.Errorf("footprint %d: %w", pid, err)
 	}
