@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright The Lima Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build linux
+
 // Package metrics reads guest memory statistics from /proc for the balloon controller.
 package metrics
 
