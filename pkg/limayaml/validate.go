@@ -90,11 +90,15 @@ func Validate(y *limatype.LimaYAML, warn bool) error {
 		errs = errors.Join(errs, errors.New("field `cpus` must be set"))
 	}
 
-	if _, err := units.RAMInBytes(*y.Memory); err != nil {
+	if y.Memory == nil {
+		errs = errors.Join(errs, errors.New("field `memory` must be set"))
+	} else if _, err := units.RAMInBytes(*y.Memory); err != nil {
 		errs = errors.Join(errs, fmt.Errorf("field `memory` has an invalid value: %w", err))
 	}
 
-	if _, err := units.RAMInBytes(*y.Disk); err != nil {
+	if y.Disk == nil {
+		errs = errors.Join(errs, errors.New("field `disk` must be set"))
+	} else if _, err := units.RAMInBytes(*y.Disk); err != nil {
 		errs = errors.Join(errs, fmt.Errorf("field `disk` has an invalid value: %w", err))
 	}
 
