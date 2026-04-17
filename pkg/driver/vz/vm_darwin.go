@@ -99,7 +99,7 @@ func startVM(ctx context.Context, inst *limatype.Instance, sshLocalPort int, onV
 						sendErrCh <- err
 					}
 					if err := os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())+"\n"), 0o644); err != nil {
-						logrus.Errorf("error writing to pid fil %q", pidFile)
+						logrus.Errorf("error writing to pidfile %q", pidFile)
 						sendErrCh <- err
 					}
 					logrus.Info("[VZ] - vm state change: running")
